@@ -1,13 +1,15 @@
 import cv2
 # pyrefly: ignore [missing-import]
 import mediapipe as mp 
-import os , time 
+import time 
 from Hand_Tracking_Model.utils import handDetector
 from utils import get_fps , draw_fps_capsule
 # pyrefly: ignore [missing-import]
 import numpy as np
 # pyrefly: ignore [missing-import]
 from pynput.mouse import Controller, Button
+# pyrefly: ignore [missing-import]
+from screeninfo import get_monitors
 
 from utils import get_fingers_up
 
@@ -20,6 +22,9 @@ Wcam, Hcam = 1280 , 720
 cap = cv2.VideoCapture(0)
 cap.set(3,Wcam)
 cap.set(4,Hcam)
+
+monitor = get_monitors()[0]
+Wscr , Hscr = monitor.width , monitor.height
 
 
 detector = handDetector(model_path = "Hand_Tracking_Model/hand_landmarker.task",
@@ -56,13 +61,17 @@ while True:
 
     res = detector.landmarker.detect_for_video(mp_img,timestamp_ms) 
 
-    lmList = detector.findHands(img,res, draw =True )
+    lmList = detector.findHands(img,res, draw =True, draw_finger= 8)
+
+    cv2.rectangle(img, (Wcam // 4, Hcam // 4), (2 * Wcam // 4, 2 * Hcam // 4),
+                (0,0,255),1)
     
     if lmList:
         lmList = lmList[0]
         f = get_fingers_up(lmList)
 
         x , y = lmList[8][1] , lmList[8][2]
+        x , y = np.interp(x , (0 , Wcam),(0,Wscr)) , np.interp(y , (0 , Hcam),(0,Hscr))
 
         mouse.position = (x , y)
 
