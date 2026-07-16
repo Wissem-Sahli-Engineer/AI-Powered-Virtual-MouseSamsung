@@ -7,11 +7,12 @@ from utils import get_fps , draw_fps_capsule
 # pyrefly: ignore [missing-import]
 import numpy as np
 # pyrefly: ignore [missing-import]
-from pynput.mouse import Controller, Button
+from pynput.mouse import Controller as MouseController, Button 
+from pynput.keyboard import Controller as KeyboardController, Key
 # pyrefly: ignore [missing-import]
 from screeninfo import get_monitors
 
-from utils import get_fingers_up
+from utils import get_fingers_up , handle_desktop_swipe
 
 
 ##################
@@ -32,17 +33,27 @@ detector = handDetector(model_path = "Hand_Tracking_Model/hand_landmarker.task",
                         confidence = 0.6
                         )
 
-mouse = Controller()
+mouse = MouseController()
+keyboard = KeyboardController()
 
 frame_count = 0
 pTime = time.time()
 
 Alert = "Hand is not completly DETECTED ! Try to move it !"
 
-is_clicking = False
+
 frameR = 125 
 box_x1, box_y1 = frameR, frameR
 box_x2, box_y2 = Wcam - frameR, Hcam - frameR
+smoothening = 15
+plocX, plocY = 0, 0  # Previous X and Y location
+clocX, clocY = 0, 0
+
+is_clicking = False
+is_swiping = False
+is_selecting = False
+swipe_start_x = 0
+swipe_threshold = 200
 
 while True:
 
@@ -76,18 +87,42 @@ while True:
 
         x , y = lmList[8][1] , lmList[8][2]
         x , y = np.interp(x, (box_x1, box_x2), (0, Wscr)) , np.interp(y, (box_y1, box_y2), (0, Hscr))
+ 
+        clocX = plocX + (x - plocX) / smoothening
+        clocY = plocY + (y - plocY) / smoothening
 
-        mouse.position = (x , y)
+        mouse.position = (clocX , clocY)
 
-        if f[0] and not f[1]:
-            is_clicking = False
-            pass
+        plocX, plocY = clocX, clocY
+
+        if f[0] and f[1] and f[2] and f[3]:
+            is_swiping, swipe_start_x = handle_desktop_swipe(clocX, 
+                                        swipe_start_x, 
+                                        is_swiping, 
+                                        swipe_threshold, keyboard)
+
+        elif f[0] and f[4] and not f[1] and not f[2] and not f[3]:
+            is_swiping = False
+            if not is_selecting:
+                mouse.press(Button.left) # HOLD the left click down
+                is_selecting = True
 
         elif f[0] and f[1]:
+            is_swiping = False
             if not is_clicking:
                 mouse.click(Button.left, 1)
                 is_clicking = True
 
+        elif f[0] and f[3] and not f[1] and not f[2] : 
+            is_swiping = False
+            if not is_clicking:
+                mouse.click(Button.right, 1)
+                is_clicking = True
+
+        else :
+            is_clicking = False
+            is_swiping = False
+            is_selecting = False
 
     else :
         cv2.putText(img,Alert, (620,100), cv2.FONT_HERSHEY_COMPLEX,

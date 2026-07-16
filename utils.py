@@ -2,6 +2,7 @@ import time , math
 import cv2
 # pyrefly: ignore [missing-import]
 import numpy as np
+from pynput.keyboard import Key
 
 # init " pTime = time.time() " before the While loop
 def get_fps(cap, pTime,type='default'):
@@ -30,16 +31,72 @@ def draw_fps_capsule(img, fps):
                 0.55, (0, 255, 255), 1, cv2.LINE_AA)
 
 
-def get_dist(point1,point2):
-    return math.hypot(point1[1]-point2[1],point1[2]-point2[2])
-
 def get_fingers_up(hand):
-    """Returns a list of 2 booleans: [Index, Middle]"""
+    """Returns a list of 5 booleans: [Thumb, Index, Middle, Ring, Pinky]"""
     fingers = []
 
-    for i in range(8, 13, 4):
+    # 4 Fingers
+    for i in range(8, 21, 4):
         tip_dist = math.hypot(hand[i][1] - hand[0][1], hand[i][2] - hand[0][2])
         pip_dist = math.hypot(hand[i-2][1] - hand[0][1], hand[i-2][2] - hand[0][2])
         fingers.append(tip_dist > pip_dist)
-        
+    
+    # Thumb
+    thumb_tip_dist = math.hypot(hand[4][1] - hand[17][1], hand[4][2] - hand[17][2])
+    thumb_ip_dist = math.hypot(hand[3][1] - hand[17][1], hand[3][2] - hand[17][2])
+    fingers.append(thumb_tip_dist > thumb_ip_dist)
+
     return fingers
+
+def handle_desktop_swipe(clocX, swipe_start_x, is_swiping, swipe_threshold, keyboard):
+
+    if not is_swiping:
+        is_swiping = True
+        swipe_start_x = clocX 
+    else:
+        # Calculate how far the hand has moved horizontally
+        distance = clocX - swipe_start_x
+
+        if distance > swipe_threshold:
+            # --- MAC USERS: Swiped Right ---
+            keyboard.press(Key.ctrl)
+            keyboard.press(Key.right)
+            
+            keyboard.release(Key.right)
+            keyboard.release(Key.ctrl)
+            
+            """ 
+            # --- WINDOWS USERS (Uncomment below) ---
+            keyboard.press(Key.ctrl)
+            keyboard.press(Key.cmd) 
+            keyboard.press(Key.right)
+            keyboard.release(Key.right)
+            keyboard.release(Key.cmd)
+            keyboard.release(Key.ctrl)
+            """
+            
+            # Reset the start point so it doesn't rapid-fire
+            swipe_start_x = clocX 
+            
+        elif distance < -swipe_threshold:
+            # --- MAC USERS: Swiped Left ---
+            keyboard.press(Key.ctrl)
+            keyboard.press(Key.left)
+            
+            keyboard.release(Key.left)
+            keyboard.release(Key.ctrl)
+            
+            """
+            # --- WINDOWS USERS (Uncomment below) ---
+            keyboard.press(Key.ctrl)
+            keyboard.press(Key.cmd)
+            keyboard.press(Key.left)
+            keyboard.release(Key.left)
+            keyboard.release(Key.cmd)
+            keyboard.release(Key.ctrl)
+            """
+            
+            # Reset the start point so it doesn't rapid-fire
+            swipe_start_x = clocX
+            
+    return is_swiping, swipe_start_x
