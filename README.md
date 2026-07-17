@@ -1,6 +1,6 @@
 # 🚀 Samsung SmartGesture CV: AI-Powered Virtual MouseSamsung
 
-**SmartGesture CV** is a state-of-the-art computer vision application that turns your physical hand into a high-precision virtual interface. By combining **Google MediaPipe Hand Landmarker** with **OpenCV** and native OS controllers, this system translates hand postures and movements into mouse tracking, clicking, dragging/selecting, and workspace swiping gestures in real-time—bringing Samsung's premium touchless TV navigation directly to your desktop.
+**Samsung SmartGesture CV** is a state-of-the-art computer vision application that turns your physical hand into a high-precision virtual interface. By combining **Google MediaPipe Hand Landmarker** with **OpenCV** and native OS controllers, this system translates hand postures and movements into mouse tracking, clicking, dragging/selecting, and workspace swiping gestures in real-time—bringing Samsung's premium touchless TV navigation directly to your desktop.
 
 ---
 
